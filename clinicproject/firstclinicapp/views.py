@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from .forms import RegisterPatientForm, SearchForm
@@ -6,6 +6,15 @@ from .models import Patient
 from django.views.generic.edit import UpdateView
 
 # Create your views here.
+
+class PatientUpdate(UpdateView):
+    model = Patient
+    template_name_suffix = '_patient'
+    fields = ['first_name', 'last_name', 'notes']
+    def get_object(self, queryset=None):
+        obj = Patient.objects.get(id=self.kwargs['id'])
+        return obj
+
 @login_required(login_url = 'accounts/login/')
 def home(request):
     return render(request, 'home.html')
@@ -23,7 +32,7 @@ def register_patient(request):
         id['id']=patient.id
         print(patient.id)
         print("exit save phase")
-    return HttpResponse("the patient id is "+ str(id['id']))
+    return render(request, 'home.html',{'id':id})
 
 @login_required(login_url = 'accounts/login')
 def search(request):
@@ -31,9 +40,9 @@ def search(request):
     if request.method == 'GET':
         return render(request, 'search.html', {'form':form})
     elif request.method == "POST":
-        id = form['search_id']
+        form = SearchForm(request.POST)
+        id = request.POST.get('search_id')
         print(id)
-        patient = Patient.objects.filter(id = id)
-        return render(request, 'details.html', {'patient':patient})
+        return redirect('patient/'+str(id))
 
         
